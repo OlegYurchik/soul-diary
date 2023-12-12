@@ -5,7 +5,12 @@ from typing import Any, Callable, Sequence
 import flet
 from flet_route import Basket, Params
 
+from soul_diary.ui.app.backend.base import BaseBackend
+from soul_diary.ui.app.backend.exceptions import NonAuthenticatedException
+from soul_diary.ui.app.backend.local import LocalBackend
+from soul_diary.ui.app.local_storage import LocalStorage
 from soul_diary.ui.app.middlewares.base import BaseMiddleware
+from soul_diary.ui.app.models import BackendType
 
 
 def view(initial: bool = False, disabled: bool = False):
@@ -65,7 +70,12 @@ class BaseView(metaclass=MetaView):
     is_abstract = True
     _initial_view: Callable | None
 
-    def __init__(self, middlewares: Sequence[BaseMiddleware | Callable] = ()):
+    def __init__(
+            self,
+            local_storage: LocalStorage,
+            middlewares: Sequence[BaseMiddleware | Callable] = (),
+    ):
+        self.local_storage = local_storage
         self.middlewares = middlewares
 
         self.container: flet.Container
@@ -115,3 +125,21 @@ class BaseView(metaclass=MetaView):
     async def run_initial_view(self, page: flet.Page):
         if self._initial_view is not None:
             await self._initial_view(page=page)
+
+    async def get_backend_client(self, page: flet.Page) -> BaseBackend:
+        auth_data = await self.local_storage.get_auth_data()
+        if auth_data is None:
+            raise NonAuthenticatedException()
+
+        if auth_data.backend == BackendType.LOCAL:
+            backend_client_class = LocalBackend
+        else:
+            raise
+
+        return backend_client_class(
+            local_storage=self.local_storage,
+            username=auth_data.username,
+            encryption_key=auth_data.encryption_key,
+            token=auth_data.token,
+            **auth_data.backend_data,
+        )

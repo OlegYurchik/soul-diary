@@ -21,7 +21,6 @@ class SoulDiaryApp:
     ):
         self._backend = backend
         self._backend_data = backend_data
-        self._backend_client = None
 
     def get_routes(self, page: flet.Page) -> dict[str, BaseView]:
         local_storage = LocalStorage(client_storage=page.client_storage)
@@ -35,7 +34,7 @@ class SoulDiaryApp:
                 backend_data=self._backend_data,
             ),
             SENSE_LIST: sense_list_view,
-            SENSE_ADD: SenseAddView(),
+            SENSE_ADD: SenseAddView(local_storage=local_storage),
         }
 
     async def run(self, page: flet.Page):

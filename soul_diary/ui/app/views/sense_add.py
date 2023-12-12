@@ -3,6 +3,7 @@ from typing import Awaitable, Callable, Sequence
 
 import flet
 
+from soul_diary.ui.app.local_storage import LocalStorage
 from soul_diary.ui.app.middlewares.base import BaseMiddleware
 from soul_diary.ui.app.models import Emotion
 from soul_diary.ui.app.routes import SENSE_ADD, SENSE_LIST
@@ -12,6 +13,7 @@ from .base import BaseView, view
 class SenseAddView(BaseView):
     def __init__(
             self,
+            local_storage: LocalStorage,
             middlewares: Sequence[BaseMiddleware | Callable[[flet.Page], Awaitable]] = (),
     ):
         self.title: flet.Text
@@ -23,7 +25,7 @@ class SenseAddView(BaseView):
         self.body: str | None = None
         self.desires: str | None = None
 
-        super().__init__(middlewares=middlewares)
+        super().__init__(local_storage=local_storage, middlewares=middlewares)
 
     async def clear(self):
         self.title.value = ""
@@ -223,8 +225,9 @@ class SenseAddView(BaseView):
             await event.page.update_async()
             return
 
+        backend_client = await self.get_backend_client(page=event.page)
         async with self.in_progress(page=event.page):
-            await event.page.app.backend_client.create_sense(
+            await backend_client.create_sense(
                 emotions=self.emotions,
                 feelings=self.feelings,
                 body=self.body,

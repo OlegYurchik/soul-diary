@@ -2,10 +2,11 @@ import asyncio
 from typing import Awaitable, Callable, Sequence
 
 import flet
+from soul_diary.ui.app.backend.exceptions import NonAuthenticatedException
 
 from soul_diary.ui.app.local_storage import LocalStorage
 from soul_diary.ui.app.middlewares.base import BaseMiddleware
-from soul_diary.ui.app.models import Sense
+from soul_diary.ui.app.models import BackendType, Sense
 from soul_diary.ui.app.routes import AUTH, SENSE_ADD, SENSE_LIST
 from .base import BaseView, view
 
@@ -20,7 +21,7 @@ class SenseListView(BaseView):
 
         self.local_storage = local_storage
 
-        super().__init__(middlewares=middlewares)
+        super().__init__(local_storage=local_storage, middlewares=middlewares)
 
     async def setup(self):
         self.cards = flet.Column(alignment=flet.alignment.center, width=400)
@@ -69,7 +70,14 @@ class SenseListView(BaseView):
         loop.create_task(self.render_sense_list(page=page))
 
     async def render_sense_list(self, page: flet.Page):
-        senses = await page.app.backend_client.get_sense_list()
+        auth_data = await self.local_storage.get_auth_data()
+        if auth_data is None:
+            raise NonAuthenticatedException()
+
+        if auth_data.backend == BackendType.LOCAL:
+            pass
+        backend_client = await self.get_backend_client(page=page)
+        senses = await backend_client.get_sense_list()
         self.cards.controls = [await self.render_card_from_sense(sense) for sense in senses]
         await page.update_async()
 
@@ -91,5 +99,4 @@ class SenseListView(BaseView):
 
     async def callback_logout(self, event: flet.ControlEvent):
         await self.local_storage.remove_auth_data()
-        event.page.app.backend_client = None
         await event.page.go_async(AUTH)

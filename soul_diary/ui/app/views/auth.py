@@ -27,14 +27,13 @@ class AuthView(BaseView):
         self.center_container: flet.Container
         self.bottom_container: flet.Container
 
-        self.local_storage = local_storage
         self.initial_backend = self.backend = backend
         self.initial_backend_data = self.backend_data = backend_data or {}
         self.backend_registration_enabled: bool = True
         self.username: str | None = None
         self.password: str | None = None
 
-        super().__init__(middlewares=middlewares)
+        super().__init__(local_storage=local_storage, middlewares=middlewares)
 
     async def clear(self):
         self.top_container.content = None
@@ -282,7 +281,6 @@ class AuthView(BaseView):
                 await event.page.update_async()
                 return
 
-        event.page.app.backend_client = backend_client
         await event.page.go_async(SENSE_LIST)
 
     async def callback_signup(
@@ -312,7 +310,6 @@ class AuthView(BaseView):
                 await event.page.update_async()
                 return
 
-        event.page.app.backend_client = backend_client
         await event.page.go_async(SENSE_LIST)
 
     async def callback_go_backend(self, event: flet.ControlEvent):
