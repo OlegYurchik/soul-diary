@@ -1,0 +1,2 @@
+class SoulServerIncorrectURL(Exception):
+    pass

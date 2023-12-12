@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "soul-diary"
+version = "0.0.1"
+description = ""
+authors = ["Oleg Yurchik <oleg@yurchik.space>"]
+readme = "README.md"
+include = [
+  "soul_diary",
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+flet = "^0.14.0"
+flet-fastapi = "^0.14.0"
+uvicorn = "^0.24.0.post1"
+facet = "^0.9.1"
+flet-route = "^0.3.2"
+pydantic = "^2.5.2"
+fastapi = "0.101.1"
+typer = "^0.9.0"
+pydantic-settings = "^2.1.0"
+pycryptodomex = "^3.19.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
