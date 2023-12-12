@@ -122,7 +122,6 @@ class BaseBackend:
             body: str,
             desires: str,
     ) -> Sense:
-        breakpoint()
         data = {
             "emotions": emotions,
             "feelings": feelings,
