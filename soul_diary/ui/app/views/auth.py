@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from typing import Any, Callable, Sequence
+from typing import Any
 
 import flet
 from pydantic import AnyHttpUrl
@@ -8,7 +8,6 @@ from pydantic import AnyHttpUrl
 from soul_diary.ui.app.backend.exceptions import IncorrectCredentialsException, UserAlreadyExistsException
 from soul_diary.ui.app.backend.soul import SoulBackend
 from soul_diary.ui.app.local_storage import LocalStorage
-from soul_diary.ui.app.middlewares.base import BaseMiddleware
 from soul_diary.ui.app.models import BackendType, Options
 from soul_diary.ui.app.routes import AUTH, SENSE_LIST
 from soul_diary.ui.app.views.exceptions import SoulServerIncorrectURL
@@ -21,7 +20,6 @@ class AuthView(BaseView):
             local_storage: LocalStorage,
             backend: BackendType | None = None,
             backend_data: dict[str, Any] | None = None,
-            middlewares: Sequence[BaseMiddleware | Callable] = (),
     ):
         self.top_container: flet.Container
         self.center_container: flet.Container
@@ -33,7 +31,7 @@ class AuthView(BaseView):
         self.username: str | None = None
         self.password: str | None = None
 
-        super().__init__(local_storage=local_storage, middlewares=middlewares)
+        super().__init__(local_storage=local_storage)
 
     async def clear(self):
         self.top_container.content = None
@@ -81,7 +79,6 @@ class AuthView(BaseView):
         label = flet.Text("Выберите сервер")
         self.top_container.content = label
 
-        backend_controls = flet.Column()
         backend_dropdown = flet.Dropdown(
             label="Бэкенд",
             options=[
@@ -91,14 +88,7 @@ class AuthView(BaseView):
             value=None if self.backend is None else self.backend.value,
             on_change=self.callback_change_backend,
         )
-
-        container = flet.Container(
-            content=flet.Column(
-                controls=[backend_dropdown, backend_controls],
-                width=300,
-            ),
-        )
-        self.center_container.content = container
+        self.center_container.content = backend_dropdown
 
         connect_button = flet.ElevatedButton(
             "Выбрать",

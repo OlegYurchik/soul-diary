@@ -1,6 +1,6 @@
+import asyncio
 from contextlib import asynccontextmanager
-from functools import partial, reduce
-from typing import Any, Callable, Sequence
+from typing import Any, Callable
 
 import flet
 from flet_route import Basket, Params
@@ -10,7 +10,6 @@ from soul_diary.ui.app.backend.exceptions import NonAuthenticatedException
 from soul_diary.ui.app.backend.local import LocalBackend
 from soul_diary.ui.app.backend.soul import SoulBackend
 from soul_diary.ui.app.local_storage import LocalStorage
-from soul_diary.ui.app.middlewares.base import BaseMiddleware
 from soul_diary.ui.app.models import BackendType
 
 
@@ -27,21 +26,6 @@ def view(initial: bool = False, disabled: bool = False):
 
         return wrapper
     return decorator
-
-
-def setup_middlewares(function: Callable):
-    async def wrapper(self, page: flet.Page, params: Params, basket: Basket) -> flet.View:
-        entrypoint = partial(function, self)
-        if self.middlewares:
-            entrypoint = partial(self.middlewares[-1], next_handler=entrypoint)
-            entrypoint = reduce(
-                lambda entrypoint, function: partial(entrypoint, next_handler=function),
-                self.middlewares[-2::-1],
-                entrypoint,
-            )
-        return await entrypoint(page=page, params=params, basket=basket)
-
-    return wrapper
 
 
 class MetaView(type):
@@ -76,28 +60,23 @@ class BaseView(metaclass=MetaView):
     is_abstract = True
     _initial_view: Callable | None
 
-    def __init__(
-            self,
-            local_storage: LocalStorage,
-            middlewares: Sequence[BaseMiddleware | Callable] = (),
-    ):
+    def __init__(self, local_storage: LocalStorage):
         self.local_storage = local_storage
-        self.middlewares = middlewares
 
         self.container: flet.Container
-        self.stack: flet.Stack
         self.view: flet.View
 
-    @setup_middlewares
     async def entrypoint(self, page: flet.Page, params: Params, basket: Basket) -> flet.View:
         self.container = flet.Container()
-        self.stack = flet.Stack(controls=[self.container])
-        self.view = flet.View(controls=[self.stack], route="/test")
+        self.view = flet.View(controls=[self.container])
 
         await self.setup()
         await self.clear()
         self.clear_data()
-        await self.run_initial_view(page=page)
+
+        loop = asyncio.get_running_loop()
+        loop.create_task(self.run_initial_view(page=page))
+
         return self.view
 
     async def setup(self):
@@ -111,21 +90,20 @@ class BaseView(metaclass=MetaView):
 
     @asynccontextmanager
     async def in_progress(self, page: flet.Page, tooltip: str | None = None):
-        for control in self.stack.controls:
-            control.disabled = True
-        self.stack.controls.append(
-            flet.Container(
+        self.container.disabled = True
+        page.splash = flet.Column(
+            controls=[flet.Container(
                 content=flet.ProgressRing(tooltip=tooltip),
                 alignment=flet.alignment.center,
-            ),
+            )],
+            alignment=flet.MainAxisAlignment.CENTER,
         )
         await page.update_async()
 
         yield
 
-        self.stack.controls.pop()
-        for control in self.stack.controls:
-            control.disabled = False
+        self.container.disabled = False
+        page.splash = None
         await page.update_async()
 
     async def run_initial_view(self, page: flet.Page):

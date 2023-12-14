@@ -1,5 +1,11 @@
 # Soul Diary
 
+## ToDo
+
+1. Refactoring: create separate pages and user controls
+2. Implement S3 backend client
+3. Implement FTP backend client
+
 ## User Flow
 
 ### Soul Diary Server

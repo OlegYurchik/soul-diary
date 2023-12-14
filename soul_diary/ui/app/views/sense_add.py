@@ -1,10 +1,8 @@
 from functools import partial
-from typing import Awaitable, Callable, Sequence
 
 import flet
 
 from soul_diary.ui.app.local_storage import LocalStorage
-from soul_diary.ui.app.middlewares.base import BaseMiddleware
 from soul_diary.ui.app.models import Emotion
 from soul_diary.ui.app.routes import SENSE_ADD, SENSE_LIST
 from .base import BaseView, view
@@ -14,7 +12,6 @@ class SenseAddView(BaseView):
     def __init__(
             self,
             local_storage: LocalStorage,
-            middlewares: Sequence[BaseMiddleware | Callable[[flet.Page], Awaitable]] = (),
     ):
         self.title: flet.Text
         self.content_container: flet.Container
@@ -25,7 +22,7 @@ class SenseAddView(BaseView):
         self.body: str | None = None
         self.desires: str | None = None
 
-        super().__init__(local_storage=local_storage, middlewares=middlewares)
+        super().__init__(local_storage=local_storage)
 
     async def clear(self):
         self.title.value = ""

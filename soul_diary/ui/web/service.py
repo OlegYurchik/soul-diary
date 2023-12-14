@@ -25,8 +25,9 @@ class WebService(ServiceMixin):
 
     async def start(self):
         app = flet_fastapi.app(SoulDiaryApp(
-            backend=BackendType.SOUL,
-            backend_data=self._backend_data,
+            # backend=BackendType.SOUL,
+            # backend_data=self._backend_data,
+            # backend=BackendType.LOCAL,
         ).run)
         config = uvicorn.Config(app=app, host="0.0.0.0", port=self._port)
         server = UvicornServer(config)

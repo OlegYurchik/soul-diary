@@ -1,12 +1,10 @@
 import asyncio
-from typing import Awaitable, Callable, Sequence
 
 import flet
 from soul_diary.ui.app.backend.exceptions import NonAuthenticatedException
 
 from soul_diary.ui.app.local_storage import LocalStorage
-from soul_diary.ui.app.middlewares.base import BaseMiddleware
-from soul_diary.ui.app.models import BackendType, Sense
+from soul_diary.ui.app.models import Sense
 from soul_diary.ui.app.routes import AUTH, SENSE_ADD, SENSE_LIST
 from .base import BaseView, view
 
@@ -15,13 +13,12 @@ class SenseListView(BaseView):
     def __init__(
             self,
             local_storage: LocalStorage,
-            middlewares: Sequence[BaseMiddleware | Callable[[flet.Page], Awaitable]] = (),
     ):
         self.cards: flet.Column
 
         self.local_storage = local_storage
 
-        super().__init__(local_storage=local_storage, middlewares=middlewares)
+        super().__init__(local_storage=local_storage)
 
     async def setup(self):
         self.cards = flet.Column(alignment=flet.alignment.center, width=400)
@@ -97,5 +94,6 @@ class SenseListView(BaseView):
 
     async def callback_logout(self, event: flet.ControlEvent):
         backend_client = await self.get_backend_client()
-        await backend_client.logout()
+        async with self.in_progress(page=event.page):
+            await backend_client.logout()
         await event.page.go_async(AUTH)
