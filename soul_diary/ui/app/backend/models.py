@@ -1,9 +1,10 @@
 import uuid
+from datetime import datetime
 
-from pydantic import AwareDatetime, BaseModel
+from pydantic import BaseModel
 
 
 class SenseBackendData(BaseModel):
     id: uuid.UUID
     data: str
-    created_at: AwareDatetime
+    created_at: datetime

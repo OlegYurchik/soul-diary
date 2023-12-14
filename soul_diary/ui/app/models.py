@@ -1,7 +1,8 @@
 import enum
 import uuid
+from datetime import datetime
 
-from pydantic import AwareDatetime, BaseModel, constr
+from pydantic import BaseModel, constr
 
 
 class Emotion(str, enum.Enum):
@@ -24,7 +25,7 @@ class Sense(BaseModel):
     feelings: constr(min_length=1, strip_whitespace=True)
     body: constr(min_length=1, strip_whitespace=True)
     desires: constr(min_length=1, strip_whitespace=True)
-    created_at: AwareDatetime
+    created_at: datetime
 
 
 class Options(BaseModel):

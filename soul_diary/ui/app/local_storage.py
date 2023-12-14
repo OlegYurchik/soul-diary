@@ -35,9 +35,11 @@ class LocalStorage:
         await self.raw_write("soul_diary.client", auth_data.model_dump(mode="json"))
 
     async def get_auth_data(self) -> AuthData | None:
-        if await self.raw_contains("soul_diary.client"):
-            data = await self.raw_read("soul_diary.client")
-            return AuthData.model_validate(data)
+        if not await self.raw_contains("soul_diary.client"):
+            return None
+
+        data = await self.raw_read("soul_diary.client")
+        return AuthData.model_validate(data)
 
     async def remove_auth_data(self):
         if await self.raw_contains("soul_diary.client"):

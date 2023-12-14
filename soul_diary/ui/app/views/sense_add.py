@@ -225,7 +225,7 @@ class SenseAddView(BaseView):
             await event.page.update_async()
             return
 
-        backend_client = await self.get_backend_client(page=event.page)
+        backend_client = await self.get_backend_client()
         async with self.in_progress(page=event.page):
             await backend_client.create_sense(
                 emotions=self.emotions,

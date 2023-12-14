@@ -2,6 +2,10 @@ class BackendException(Exception):
     pass
 
 
+class RegistrationNotSupportedException(BackendException):
+    pass
+
+
 class UserAlreadyExistsException(BackendException):
     pass
 

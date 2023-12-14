@@ -100,9 +100,11 @@ class BaseBackend:
         )
 
     async def logout(self):
+        await self.deauth()
         self._token = None
         self._encryption_key = None
         self._username = None
+        await self._local_storage.remove_auth_data()
 
     @property
     def is_auth(self) -> bool:
@@ -165,6 +167,9 @@ class BaseBackend:
         raise NotImplementedError
 
     async def auth(self, username: str, password: str) -> str:
+        raise NotImplementedError
+
+    async def deauth(self):
         raise NotImplementedError
 
     async def get_options(self) -> Options:

@@ -8,6 +8,7 @@ from flet_route import Basket, Params
 from soul_diary.ui.app.backend.base import BaseBackend
 from soul_diary.ui.app.backend.exceptions import NonAuthenticatedException
 from soul_diary.ui.app.backend.local import LocalBackend
+from soul_diary.ui.app.backend.soul import SoulBackend
 from soul_diary.ui.app.local_storage import LocalStorage
 from soul_diary.ui.app.middlewares.base import BaseMiddleware
 from soul_diary.ui.app.models import BackendType
@@ -67,6 +68,11 @@ class MetaView(type):
 
 
 class BaseView(metaclass=MetaView):
+    BACKEND_MAPPING = {
+        BackendType.LOCAL: LocalBackend,
+        BackendType.SOUL: SoulBackend,
+    }
+
     is_abstract = True
     _initial_view: Callable | None
 
@@ -126,14 +132,13 @@ class BaseView(metaclass=MetaView):
         if self._initial_view is not None:
             await self._initial_view(page=page)
 
-    async def get_backend_client(self, page: flet.Page) -> BaseBackend:
+    async def get_backend_client(self) -> BaseBackend:
         auth_data = await self.local_storage.get_auth_data()
         if auth_data is None:
             raise NonAuthenticatedException()
 
-        if auth_data.backend == BackendType.LOCAL:
-            backend_client_class = LocalBackend
-        else:
+        backend_client_class = self.BACKEND_MAPPING.get(auth_data.backend, None)
+        if backend_client_class is None:
             raise
 
         return backend_client_class(

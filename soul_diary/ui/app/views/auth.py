@@ -6,7 +6,7 @@ import flet
 from pydantic import AnyHttpUrl
 
 from soul_diary.ui.app.backend.exceptions import IncorrectCredentialsException, UserAlreadyExistsException
-from soul_diary.ui.app.backend.local import LocalBackend
+from soul_diary.ui.app.backend.soul import SoulBackend
 from soul_diary.ui.app.local_storage import LocalStorage
 from soul_diary.ui.app.middlewares.base import BaseMiddleware
 from soul_diary.ui.app.models import BackendType, Options
@@ -243,11 +243,16 @@ class AuthView(BaseView):
 
     async def connect_to_soul_server(self) -> Options:
         try:
-            AnyHttpUrl(self.backend_data.get("url"))
+            backend_url = AnyHttpUrl(self.backend_data.get("url"))
         except ValueError:
             raise SoulServerIncorrectURL()
-        raise
-
+        
+        backend_client = SoulBackend(
+            local_storage=self.local_storage,
+            url=str(backend_url),
+        )
+        return await backend_client.get_options()
+        
     async def callback_change_username(self, event: flet.ControlEvent):
         self.username = event.control.value
 
@@ -268,10 +273,13 @@ class AuthView(BaseView):
             await event.page.update_async()
             return
 
-        if self.backend == BackendType.LOCAL:
-            backend_client = LocalBackend(local_storage=self.local_storage)
-        else:
+        backend_client_class = self.BACKEND_MAPPING.get(self.backend)
+        if backend_client_class is None:
             raise
+        backend_client = backend_client_class(
+            local_storage=self.local_storage,
+            **self.backend_data,
+        )
 
         async with self.in_progress(page=event.page):
             try:
@@ -297,10 +305,13 @@ class AuthView(BaseView):
             await event.page.update_async()
             return
 
-        if self.backend == BackendType.LOCAL:
-            backend_client = LocalBackend(local_storage=self.local_storage)
-        else:
+        backend_client_class = self.BACKEND_MAPPING.get(self.backend)
+        if backend_client_class is None:
             raise
+        backend_client = backend_client_class(
+            local_storage=self.local_storage,
+            **self.backend_data,
+        )
 
         async with self.in_progress(page=event.page):
             try:

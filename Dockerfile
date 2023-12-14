@@ -6,7 +6,7 @@ RUN pip install poetry
 
 COPY ./pyproject.toml /app/pyproject.toml
 COPY ./poetry.lock /app/poetry.lock
-RUN poetry install --only main
+RUN poetry install --only main --only ui --only backend --all-extras
 
 COPY ./soul_diary /app/soul_diary
 

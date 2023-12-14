@@ -74,9 +74,7 @@ class SenseListView(BaseView):
         if auth_data is None:
             raise NonAuthenticatedException()
 
-        if auth_data.backend == BackendType.LOCAL:
-            pass
-        backend_client = await self.get_backend_client(page=page)
+        backend_client = await self.get_backend_client()
         senses = await backend_client.get_sense_list()
         self.cards.controls = [await self.render_card_from_sense(sense) for sense in senses]
         await page.update_async()
@@ -98,5 +96,6 @@ class SenseListView(BaseView):
         await event.page.go_async(SENSE_ADD)
 
     async def callback_logout(self, event: flet.ControlEvent):
-        await self.local_storage.remove_auth_data()
+        backend_client = await self.get_backend_client()
+        await backend_client.logout()
         await event.page.go_async(AUTH)

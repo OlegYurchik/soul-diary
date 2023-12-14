@@ -54,6 +54,9 @@ class LocalBackend(BaseBackend):
 
         return auth_block
 
+    async def deauth(self):
+        pass
+
     async def get_options(self) -> Options:
         return Options(registration_enabled=True)
 
