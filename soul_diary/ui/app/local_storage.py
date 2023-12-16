@@ -14,6 +14,9 @@ class AuthData(BaseModel):
 
 
 class LocalStorage:
+    AUTH_DATA_KEY = "soul_diary.client.auth_data"
+    SHARED_DATA_KEY = "soul_diary.client.shared_data"
+
     def __init__(self, client_storage):
         self._client_storage = client_storage
 
@@ -32,21 +35,40 @@ class LocalStorage:
             encryption_key=encryption_key,
             token=token,
         )
-        await self.raw_write("soul_diary.client", auth_data.model_dump(mode="json"))
+        await self.raw_write(self.AUTH_DATA_KEY, auth_data.model_dump(mode="json"))
 
     async def get_auth_data(self) -> AuthData | None:
-        if not await self.raw_contains("soul_diary.client"):
+        if not await self.raw_contains(self.AUTH_DATA_KEY):
             return None
 
-        data = await self.raw_read("soul_diary.client")
+        data = await self.raw_read(self.AUTH_DATA_KEY)
         return AuthData.model_validate(data)
 
-    async def remove_auth_data(self):
-        if await self.raw_contains("soul_diary.client"):
-            await self.raw_remove("soul_diary.client")
+    async def clear_auth_data(self):
+        if await self.raw_contains(self.AUTH_DATA_KEY):
+            await self.raw_remove(self.AUTH_DATA_KEY)
 
-    async def clear(self):
-        await self._client_storage.clear_async()
+    async def add_shared_data(self, **kwargs):
+        if await self.raw_contains(self.SHARED_DATA_KEY):
+            tmp_data = await self.raw_read(self.SHARED_DATA_KEY)
+        else:
+            tmp_data = {}
+
+        tmp_data.update(kwargs)
+        await self.raw_write(self.SHARED_DATA_KEY, tmp_data)
+
+    async def get_shared_data(self, key: str):
+        if not await self.raw_contains(self.SHARED_DATA_KEY):
+            return None
+
+        tmp_data = await self.raw_read(self.SHARED_DATA_KEY)
+        return tmp_data.get(key)
+
+    async def clear_shared_data(self):
+        if not await self.raw_contains(self.SHARED_DATA_KEY):
+            return
+
+        await self.raw_remove(self.SHARED_DATA_KEY)
 
     async def raw_contains(self, key: str) -> bool:
         return await self._client_storage.contains_key_async(key)

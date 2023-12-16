@@ -22,34 +22,37 @@ class SoulDiaryApp:
         self._backend = backend
         self._backend_data = backend_data
 
-    def get_routes(self, page: flet.Page) -> dict[str, BaseView]:
-        local_storage = LocalStorage(client_storage=page.client_storage)
-        sense_list_view = SenseListView(local_storage=local_storage)
+    def get_routes(self) -> dict[str, BaseView]:
+        sense_list_view = SenseListView()
 
         return {
             INDEX: sense_list_view,
             AUTH: AuthView(
-                local_storage=local_storage,
                 backend=self._backend,
                 backend_data=self._backend_data,
             ),
             SENSE_LIST: sense_list_view,
-            SENSE_ADD: SenseAddView(local_storage=local_storage),
+            SENSE_ADD: SenseAddView(),
         }
 
     async def run(self, page: flet.Page):
         page.title = "Soul Diary"
         page.app = self
+        page.on_disconect = self.callback_disconnect
 
-        routes = self.get_routes(page)
+        routes = self.get_routes()
         Routing(
             page=page,
             async_is=True,
             app_routes=[
-                path(url=url, clear=False, view=view.entrypoint)
+                path(url=url, clear=False, view=view)
                 for url, view in routes.items()
             ],
             middleware=middleware,
         )
 
         return await page.go_async(page.route)
+
+    async def callback_disconnect(self, event: flet.ControlEvent):
+        local_storage = LocalStorage(event.page.client_storage)
+        await local_storage.clear_shared_data()

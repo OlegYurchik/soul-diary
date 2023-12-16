@@ -104,7 +104,7 @@ class BaseBackend:
         self._token = None
         self._encryption_key = None
         self._username = None
-        await self._local_storage.remove_auth_data()
+        await self._local_storage.clear_auth_data()
 
     @property
     def is_auth(self) -> bool:
