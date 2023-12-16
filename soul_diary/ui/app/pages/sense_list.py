@@ -1,16 +1,20 @@
+import uuid
+from functools import partial
+
 import flet
 
 from soul_diary.ui.app.backend.utils import get_backend_client
 from soul_diary.ui.app.controls.utils import in_progress
 from soul_diary.ui.app.local_storage import LocalStorage
 from soul_diary.ui.app.models import Sense
-from soul_diary.ui.app.routes import AUTH, SENSE_ADD
+from soul_diary.ui.app.routes import AUTH, SENSE, SENSE_ADD
 from .base import BasePage, callback_error_handle
 
 
 class SenseListPage(BasePage):
     def __init__(self, view: flet.View, local_storage: LocalStorage):
         self.local_storage = local_storage
+        self.senses = []
         self.senses_cards: flet.Column
 
         super().__init__(view=view)
@@ -51,10 +55,10 @@ class SenseListPage(BasePage):
 
     async def render_cards(self):
         backend_client = await get_backend_client(self.local_storage)
-        senses = await backend_client.get_sense_list()
+        self.senses = await backend_client.get_sense_list()
         self.senses_cards.controls = [
             await self.render_card(sense)
-            for sense in senses
+            for sense in self.senses
         ]
         await self.update_async()
 
@@ -62,14 +66,27 @@ class SenseListPage(BasePage):
         feelings = flet.Container(content=flet.Text(sense.feelings), expand=True)
         created_datetime = flet.Text(sense.created_at.strftime("%d %b %H:%M"))
 
-        return flet.Card(
-            content=flet.Container(
-                content=flet.Column(controls=[feelings, created_datetime]),
-                padding=10,
+        card = flet.Container(
+            content=flet.Card(
+                content=flet.Container(
+                    content=flet.Column(controls=[feelings, created_datetime]),
+                    padding=10,
+                ),
+                width=400,
+                height=100,
             ),
-            width=400,
-            height=100,
+            on_click=partial(self.callback_card_click, sense_id=sense.id),
         )
+        gesture_detector = flet.GestureDetector(
+            mouse_cursor=flet.MouseCursor.CLICK,
+            content=card,
+        )
+
+        return gesture_detector
+
+    @callback_error_handle
+    async def callback_card_click(self, event: flet.ControlEvent, sense_id: uuid.UUID):
+        await event.page.go_async(SENSE.replace(":sense_id", str(sense_id)))
 
     @callback_error_handle
     async def callback_add_sense(self, event: flet.ControlEvent):

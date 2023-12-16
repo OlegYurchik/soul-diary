@@ -1,7 +1,7 @@
-import asyncio
 from typing import Any
 
 import flet
+from flet_route import Params
 
 from soul_diary.ui.app.backend.soul import SoulBackend
 from soul_diary.ui.app.controls.utils import in_progress
@@ -23,7 +23,7 @@ class AuthView(BaseView):
         self.backend = backend
         self.backend_data = backend_data
 
-    async def entrypoint(self, page: flet.Page) -> BasePage:
+    async def entrypoint(self, page: flet.Page, params: Params) -> BasePage:
         local_storage = LocalStorage(client_storage=page.client_storage)
         if self.backend == BackendType.SOUL:
             return await self.connect_to_soul_server(

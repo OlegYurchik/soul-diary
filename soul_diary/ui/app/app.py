@@ -6,9 +6,10 @@ from flet_route import Routing, path
 from .local_storage import LocalStorage
 from .middleware import middleware
 from .models import BackendType
-from .routes import AUTH, INDEX, SENSE_ADD, SENSE_LIST
+from .routes import AUTH, INDEX, SENSE, SENSE_ADD, SENSE_LIST
 from .views.auth import AuthView
 from .views.base import BaseView
+from .views.sense import SenseView
 from .views.sense_add import SenseAddView
 from .views.sense_list import SenseListView
 
@@ -33,6 +34,7 @@ class SoulDiaryApp:
             ),
             SENSE_LIST: sense_list_view,
             SENSE_ADD: SenseAddView(),
+            SENSE: SenseView(),
         }
 
     async def run(self, page: flet.Page):
