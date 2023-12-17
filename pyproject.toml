@@ -14,7 +14,7 @@ aiosqlite = { version = "^0.19.0", optional = true }
 asyncpg = { version = "^0.28.0", optional = true }
 
 # main
-python = "^3.11"
+python = "^3.10"
 uvicorn = "^0.24.0.post1"
 facet = "^0.9.1"
 pydantic = "^2.5.2"
@@ -38,6 +38,7 @@ flet-fastapi = "^0.14.0"
 pycryptodomex = "^3.19.0"
 yarl = "^1.9.4"
 httpx = "0.24.1"
+packaging = "23.1"
 
 [build-system]
 requires = ["poetry-core"]

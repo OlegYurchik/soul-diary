@@ -28,6 +28,7 @@ class SenseListPage(BasePage):
         )
         settings_button = flet.IconButton(
             icon=flet.icons.SETTINGS,
+            visible=False,
         )
         logout_button = flet.IconButton(
             icon=flet.icons.LOGOUT,

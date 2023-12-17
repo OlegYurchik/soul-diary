@@ -1,6 +1,6 @@
 from facet import ServiceMixin
 
-from .web import WebService, WebSettings, get_service as get_web_service
+from .web import WebService, get_service as get_web_service
 
 
 class UIService(ServiceMixin):
@@ -15,6 +15,5 @@ class UIService(ServiceMixin):
 
 
 def get_service() -> UIService:
-    settings = WebSettings()
-    web = get_web_service(settings=settings)
+    web = get_web_service()
     return UIService(web=web)

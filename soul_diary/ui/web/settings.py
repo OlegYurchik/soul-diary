@@ -11,7 +11,3 @@ class WebSettings(BaseSettings):
     backend_data: dict[str, Any] = {
         "url": "http://localhost:8001",
     }
-
-
-def get_settings() -> WebSettings:
-    return WebSettings()

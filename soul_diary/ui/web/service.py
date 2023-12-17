@@ -34,5 +34,6 @@ class WebService(ServiceMixin):
         self.add_task(server.serve())
 
 
-def get_service(settings: WebSettings) -> WebService:
+def get_service() -> WebService:
+    settings = WebSettings()
     return WebService(port=settings.port, backend_data=settings.backend_data)
