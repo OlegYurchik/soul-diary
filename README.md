@@ -2,9 +2,10 @@
 
 ## ToDo
 
-1. Implement infinity scroll
-2. Implement S3 backend client
-3. Implement FTP backend client
+1. Implement cursor pagination on backends
+2. Implement infinity scroll 
+3. Implement S3 backend client
+4. Implement FTP backend client
 
 ## User Flow
 

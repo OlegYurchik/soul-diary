@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, PositiveInt
+from pydantic import BaseModel, ConfigDict
 
 
 class CreateSenseRequest(BaseModel):
@@ -18,11 +18,6 @@ class SenseResponse(BaseModel):
     id: uuid.UUID
     data: str
     created_at: datetime
-
-
-class Pagination(BaseModel):
-    page: PositiveInt = 1
-    limit: PositiveInt = 10
 
 
 class SenseListResponse(BaseModel):

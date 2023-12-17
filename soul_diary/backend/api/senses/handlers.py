@@ -6,7 +6,6 @@ from soul_diary.backend.database.models import Sense, Session
 from .dependencies import is_auth, sense
 from .schemas import (
     CreateSenseRequest,
-    Pagination,
     SenseListResponse,
     SenseResponse,
     UpdateSenseRequest,
@@ -16,15 +15,9 @@ from .schemas import (
 async def get_sense_list(
         database: DatabaseService = fastapi.Depends(database),
         user_session: Session = fastapi.Depends(is_auth),
-        pagination: Pagination = fastapi.Depends(Pagination),
 ) -> SenseListResponse:
     async with database.transaction() as session:
-        senses = await database.get_sense_list(
-            session=session,
-            user=user_session.user,
-            page=pagination.page,
-            limit=pagination.limit,
-        )
+        senses = await database.get_senses(session=session, user=user_session.user)
 
     return SenseListResponse(data=senses)
 

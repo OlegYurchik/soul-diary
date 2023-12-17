@@ -79,7 +79,7 @@ class DesiresPage(BasePage):
             body=body,
         ).apply()
 
-    @callback_error_handle
+    # @callback_error_handle
     async def callback_add_sense(self, event: flet.ControlEvent, desires_field: flet.TextField):
         if self.desires is None or not self.desires.strip():
             desires_field.error_text = "Коротко опиши свои желания"

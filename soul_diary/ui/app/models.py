@@ -26,7 +26,3 @@ class Sense(BaseModel):
     body: constr(min_length=1, strip_whitespace=True)
     desires: constr(min_length=1, strip_whitespace=True)
     created_at: datetime
-
-
-class Options(BaseModel):
-    registration_enabled: bool

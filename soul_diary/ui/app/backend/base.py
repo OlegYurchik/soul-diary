@@ -6,9 +6,9 @@ from typing import Any
 
 from Cryptodome.Cipher import AES
 
-from soul_diary.ui.app.backend.models import SenseBackendData
 from soul_diary.ui.app.local_storage import LocalStorage
-from soul_diary.ui.app.models import BackendType, Emotion, Options, Sense
+from soul_diary.ui.app.models import BackendType, Emotion, Sense
+from .models import EncryptedSense, EncryptedSenseList, SenseList, Options
 
 
 class BaseBackend:
@@ -68,7 +68,7 @@ class BaseBackend:
 
         return data_decoded
 
-    def convert_sense_data_to_sense(self, sense_data: SenseBackendData) -> Sense:
+    def convert_encrypted_sense_to_sense(self, sense_data: EncryptedSense) -> Sense:
         return Sense(
             id=sense_data.id,
             created_at=sense_data.created_at,
@@ -110,12 +110,13 @@ class BaseBackend:
     def is_auth(self) -> bool:
         return all((self._token, self._encryption_key))
 
-    async def get_sense_list(self, page: int = 1, limit: int = 10) -> list[Sense]:
-        sense_data_list = await self.fetch_sense_list(page=page, limit=limit) 
-        return [
-            self.convert_sense_data_to_sense(sense_data)
-            for sense_data in sense_data_list
+    async def get_sense_list(self) -> SenseList:
+        encrypted_sense_list = await self.fetch_sense_list()
+        senses = [
+            self.convert_encrypted_sense_to_sense(encrypted_sense)
+            for encrypted_sense in encrypted_sense_list.senses
         ]
+        return SenseList(senses=senses)
 
     async def create_sense(
             self,
@@ -132,13 +133,13 @@ class BaseBackend:
         }
         encoded_data = self.encode(data)
 
-        sense_data = await self.pull_sense_data(data=encoded_data)
+        encrypted_sense = await self.pull_sense_data(data=encoded_data)
 
-        return self.convert_sense_data_to_sense(sense_data)
+        return self.convert_encrypted_sense_to_sense(encrypted_sense)
 
     async def get_sense(self, sense_id: uuid.UUID) -> Sense:
-        sense_data = await self.fetch_sense(sense_id=sense_id)
-        return self.convert_sense_data_to_sense(sense_data)
+        encrypted_sense = await self.fetch_sense(sense_id=sense_id)
+        return self.convert_encrypted_sense_to_sense(encrypted_sense)
 
     async def edit_sense(
             self,
@@ -156,9 +157,9 @@ class BaseBackend:
         }
         encoded_data = self.encode(data)
 
-        sense_data = await self.pull_sense_data(data=encoded_data, sense_id=sense_id)
+        encrypted_sense = await self.pull_sense_data(data=encoded_data, sense_id=sense_id)
 
-        return self.convert_sense_data_to_sense(sense_data)
+        return self.convert_encrypted_sense_to_sense(encrypted_sense)
 
     def get_backend_data(self) -> dict[str, Any]:
         raise NotImplementedError
@@ -175,21 +176,17 @@ class BaseBackend:
     async def get_options(self) -> Options:
         raise NotImplementedError
 
-    async def fetch_sense_list(
-            self,
-            page: int = 1,
-            limit: int = 10,
-    ) -> list[SenseBackendData]:
+    async def fetch_sense_list(self) -> EncryptedSenseList:
         raise NotImplementedError
 
-    async def fetch_sense(self, sense_id: uuid.UUID) -> SenseBackendData:
+    async def fetch_sense(self, sense_id: uuid.UUID) -> EncryptedSense:
         raise NotImplementedError
 
     async def pull_sense_data(
             self,
             data: str,
             sense_id: uuid.UUID | None = None,
-    ) -> SenseBackendData:
+    ) -> EncryptedSense:
         raise NotImplementedError
 
     async def delete_sense(self, sense_id: uuid.UUID):

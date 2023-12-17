@@ -5,7 +5,7 @@ import httpx
 import yarl
 
 from soul_diary.ui.app.local_storage import LocalStorage
-from soul_diary.ui.app.models import BackendType, Options
+from soul_diary.ui.app.models import BackendType
 from .base import BaseBackend
 from .exceptions import (
     IncorrectCredentialsException,
@@ -14,7 +14,7 @@ from .exceptions import (
     SenseNotFoundException,
     UserAlreadyExistsException,
 )
-from .models import SenseBackendData
+from .models import EncryptedSense, EncryptedSenseList, Options
 
 
 class SoulBackend(BaseBackend):
@@ -117,20 +117,15 @@ class SoulBackend(BaseBackend):
 
         return Options.model_validate(response)
 
-    async def fetch_sense_list(
-            self,
-            page: int = 1,
-            limit: int = 10,
-    ) -> list[SenseBackendData]:
+    async def fetch_sense_list(self) -> EncryptedSenseList:
         path = "/senses/"
-        params = {"page": page, "limit": limit}
 
-        response = await self.request(method="GET", path=path, params=params)
-        senses = [SenseBackendData.model_validate(sense) for sense in response["data"]]
+        response = await self.request(method="GET", path=path)
+        senses = [EncryptedSense.model_validate(sense) for sense in response["data"]]
 
-        return senses
+        return EncryptedSenseList(senses=senses)
 
-    async def fetch_sense(self, sense_id: uuid.UUID) -> SenseBackendData:
+    async def fetch_sense(self, sense_id: uuid.UUID) -> EncryptedSense:
         path = f"/senses/{sense_id}"
 
         try:
@@ -141,13 +136,13 @@ class SoulBackend(BaseBackend):
             else:
                 raise exc
 
-        return SenseBackendData.model_validate(response)
+        return EncryptedSense.model_validate(response)
 
     async def pull_sense_data(
             self,
             data: str,
             sense_id: uuid.UUID | None = None,
-    ) -> SenseBackendData:
+    ) -> EncryptedSense:
         path = "/senses/" if sense_id is None else f"/senses/{sense_id}"
         request_data = {"data": data}
 
@@ -159,7 +154,7 @@ class SoulBackend(BaseBackend):
             else:
                 raise exc
 
-        return SenseBackendData.model_validate(response)
+        return EncryptedSense.model_validate(response)
 
     async def delete_sense(self, sense_id: uuid.UUID):
         path = f"/senses/{sense_id}"

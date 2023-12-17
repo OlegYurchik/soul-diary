@@ -65,12 +65,13 @@ class SenseListPage(BasePage):
         )
 
     async def did_mount_async(self):
+        backend_client = await get_backend_client(self.local_storage)
+        sense_list = await backend_client.get_sense_list()
+        self.senses = sense_list.senses
         await self.render_cards()
 
     async def render_cards(self):
         function = self.render_extend_card if self.extend else self.render_compact_card
-        backend_client = await get_backend_client(self.local_storage)
-        self.senses = await backend_client.get_sense_list()
         self.senses_cards.controls = [await function(sense) for sense in self.senses]
         await self.update_async()
 
@@ -97,7 +98,7 @@ class SenseListPage(BasePage):
             content=flet.Card(
                 content=flet.Container(
                     content=flet.Column(controls=[feelings, bottom_row]),
-                    padding=10,
+                    padding=15,
                 ),
                 width=600,
                 height=150,
@@ -150,7 +151,7 @@ class SenseListPage(BasePage):
             content=flet.Container(
                 content=flet.Column(controls=[title, emotions, feelings_container, body_container,
                                               desires_container]),
-                padding=10,
+                padding=15,
             ),
             width=600,
         )

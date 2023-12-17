@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from soul_diary.ui.app.models import BackendType, Options
+from soul_diary.ui.app.models import BackendType
 from .base import BaseBackend
 from .exceptions import (
     IncorrectCredentialsException,
@@ -11,7 +11,7 @@ from .exceptions import (
     SenseNotFoundException,
     UserAlreadyExistsException,
 )
-from .models import SenseBackendData
+from .models import EncryptedSense, EncryptedSenseList, Options
 
 
 class LocalBackend(BaseBackend):
@@ -60,48 +60,39 @@ class LocalBackend(BaseBackend):
     async def get_options(self) -> Options:
         return Options(registration_enabled=True)
 
-    async def _fetch_sense_list(self) -> list[SenseBackendData]:
+    async def fetch_sense_list(self) -> EncryptedSenseList:
         if not self.is_auth:
             raise NonAuthenticatedException()
 
         sense_list_key = self.SENSE_LIST_KEY_TEMPLATE.format(username=self._username)
         sense_list = await self._local_storage.raw_read(sense_list_key) or []
-        return [SenseBackendData.model_validate(sense) for sense in sense_list]
+        senses = [EncryptedSense.model_validate(sense) for sense in sense_list]
+        return EncryptedSenseList(senses=senses)
 
-    async def fetch_sense_list(
-            self,
-            page: int = 1,
-            limit: int = 10,
-    ) -> list[SenseBackendData]:
-        sense_list = await self._fetch_sense_list()
-        sense_list_filtered = sense_list[(page - 1) * limit:page * limit]
+    async def fetch_sense(self, sense_id: uuid.UUID) -> EncryptedSense:
+        sense_list = await self.fetch_sense_list()
 
-        return sense_list_filtered
-
-    async def fetch_sense(self, sense_id: uuid.UUID) -> SenseBackendData:
-        sense_list = await self._fetch_sense_list()
-
-        for sense in sense_list:
+        for sense in sense_list.senses:
             if sense.id == sense_id:
                 return sense
 
         raise SenseNotFoundException()
 
-    async def pull_sense_data(self, data: str, sense_id: uuid.UUID | None = None) -> SenseBackendData:
+    async def pull_sense_data(self, data: str, sense_id: uuid.UUID | None = None) -> EncryptedSense:
         sense_list_key = self.SENSE_LIST_KEY_TEMPLATE.format(username=self._username)
-        sense_list = await self._fetch_sense_list()
+        sense_list = await self.fetch_sense_list()
 
         if sense_id is None:
-            sense_ids = {sense.id for sense in sense_list}
+            sense_ids = {sense.id for sense in sense_list.senses}
             sense_id = uuid.uuid4()
             while sense_id in sense_ids:
                 sense_id = uuid.uuid4()
-            sense = SenseBackendData(
+            sense = EncryptedSense(
                 id=sense_id,
                 data=data,
                 created_at=datetime.now().astimezone(),
             )
-            sense_list.insert(0, sense)
+            sense_list.senses.insert(0, sense)
         else:
             for index, sense in enumerate(sense_list):
                 if sense.id == sense_id:
@@ -109,20 +100,20 @@ class LocalBackend(BaseBackend):
             else:
                 raise SenseNotFoundException()
 
-            sense = sense_list[index]
+            sense = sense_list.senses[index]
             sense.data = data
-            sense_list[index] = sense
+            sense_list.senses[index] = sense
         
         await self._local_storage.raw_write(
             sense_list_key,
-            [sense.model_dump(mode="json") for sense in sense_list],
+            [sense.model_dump(mode="json") for sense in sense_list.senses],
         )
 
         return sense
 
     async def delete_sense(self, sense_id: uuid.UUID):
         sense_list_key = self.SENSE_LIST_KEY_TEMPLATE.format(username=self._username)
-        sense_list = await self._fetch_sense_list()
+        sense_list = await self.fetch_sense_list()
 
         for index, sense in enumerate(sense_list):
             if sense.id == sense_id:
