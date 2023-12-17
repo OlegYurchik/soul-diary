@@ -106,7 +106,11 @@ class DatabaseService(ServiceMixin):
             page: int = 1,
             limit: int = 10,
     ) -> list[Sense]:
-        query = select(Sense).where(Sense.user == user).limit(limit).offset((page - 1) * limit)
+        query = (
+            select(Sense).where(Sense.user == user)
+            .order_by(Sense.created_at.desc())
+            .limit(limit).offset((page - 1) * limit)
+        )
 
         result = await session.execute(query)
         senses = result.scalars().all()
