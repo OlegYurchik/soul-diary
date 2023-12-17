@@ -16,6 +16,7 @@ class AuthData(BaseModel):
 class LocalStorage:
     AUTH_DATA_KEY = "soul_diary.client.auth_data"
     SHARED_DATA_KEY = "soul_diary.client.shared_data"
+    CLIENT_DATA_KEY = "soul_diary.client.{key}"
 
     def __init__(self, client_storage):
         self._client_storage = client_storage
@@ -65,10 +66,24 @@ class LocalStorage:
         return tmp_data.get(key)
 
     async def clear_shared_data(self):
-        if not await self.raw_contains(self.SHARED_DATA_KEY):
-            return
+        if await self.raw_contains(self.SHARED_DATA_KEY):
+            await self.raw_remove(self.SHARED_DATA_KEY)
 
-        await self.raw_remove(self.SHARED_DATA_KEY)
+    async def add_client_data(self, key: str, value):
+        full_key = self.CLIENT_DATA_KEY.format(key=key)
+        await self.raw_write(key=full_key, value=value)
+
+    async def get_client_data(self, key: str):
+        full_key = self.CLIENT_DATA_KEY.format(key=key)
+        
+        if await self.raw_contains(full_key):
+            return await self.raw_read(full_key)
+
+    async def remove_client_data(self, key: str):
+        full_key = self.CLIENT_DATA_KEY.format(key=key)
+
+        if await self.raw_contains(full_key):
+            await self.raw_remove(full_key)
 
     async def raw_contains(self, key: str) -> bool:
         return await self._client_storage.contains_key_async(key)

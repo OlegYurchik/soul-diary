@@ -37,13 +37,13 @@ class SensePage(BasePage):
         self.body = flet.Text(style=flet.TextThemeStyle.BODY_LARGE)
         body_container = flet.Container(
             content=flet.Column(controls=[body_title, self.body]),
-            margin=flet.margin.symmetric(vertical=30),
+            margin=flet.margin.symmetric(vertical=15),
         )
         desires_title = flet.Text("Желания", style=flet.TextThemeStyle.HEADLINE_MEDIUM)
         self.desires = flet.Text(style=flet.TextThemeStyle.BODY_LARGE)
         desires_container = flet.Container(
             content=flet.Column(controls=[desires_title, self.desires]),
-            margin=flet.margin.symmetric(vertical=30),
+            margin=flet.margin.symmetric(vertical=15),
         )
 
         return flet.Container(
