@@ -2,10 +2,11 @@
 
 ## ToDo
 
-1. Implement cursor pagination on backends
+1. Implement cursor pagination on backends and server
 2. Implement infinity scroll 
-3. Implement S3 backend client
-4. Implement FTP backend client
+3. Add filters: min timestamp, max timestamp, emotions
+4. Implement S3 backend client
+5. Implement FTP backend client
 
 ## User Flow
 

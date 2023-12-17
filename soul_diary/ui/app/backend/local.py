@@ -60,7 +60,11 @@ class LocalBackend(BaseBackend):
     async def get_options(self) -> Options:
         return Options(registration_enabled=True)
 
-    async def fetch_sense_list(self) -> EncryptedSenseList:
+    async def fetch_sense_list(
+            self,
+            cursor: str | None = None,
+            limit: int = 10,
+    ) -> EncryptedSenseList:
         if not self.is_auth:
             raise NonAuthenticatedException()
 

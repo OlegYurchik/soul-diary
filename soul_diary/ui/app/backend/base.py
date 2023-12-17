@@ -110,8 +110,8 @@ class BaseBackend:
     def is_auth(self) -> bool:
         return all((self._token, self._encryption_key))
 
-    async def get_sense_list(self) -> SenseList:
-        encrypted_sense_list = await self.fetch_sense_list()
+    async def get_sense_list(self, cursor: str | None = None, limit: int = 10) -> SenseList:
+        encrypted_sense_list = await self.fetch_sense_list(cursor=cursor, limit=limit)
         senses = [
             self.convert_encrypted_sense_to_sense(encrypted_sense)
             for encrypted_sense in encrypted_sense_list.senses
@@ -176,7 +176,11 @@ class BaseBackend:
     async def get_options(self) -> Options:
         raise NotImplementedError
 
-    async def fetch_sense_list(self) -> EncryptedSenseList:
+    async def fetch_sense_list(
+            self,
+            cursor: str | None = None,
+            limit: int = 10,
+    ) -> EncryptedSenseList:
         raise NotImplementedError
 
     async def fetch_sense(self, sense_id: uuid.UUID) -> EncryptedSense:

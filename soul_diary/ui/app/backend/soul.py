@@ -117,10 +117,16 @@ class SoulBackend(BaseBackend):
 
         return Options.model_validate(response)
 
-    async def fetch_sense_list(self) -> EncryptedSenseList:
+    async def fetch_sense_list(
+            self,
+            cursor: str | None = None,
+            limit: int = 10,
+    ) -> EncryptedSenseList:
         path = "/senses/"
+        params = {"limit": limit, "cursor": cursor}
+        params = {key: value for key, value in params.items() if value is not None}
 
-        response = await self.request(method="GET", path=path)
+        response = await self.request(method="GET", path=path, params=params)
         senses = [EncryptedSense.model_validate(sense) for sense in response["data"]]
 
         return EncryptedSenseList(senses=senses)
