@@ -1,9 +1,17 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, NonNegativeInt
 
 from soul_diary.ui.app.models import Sense
+
+
+class Paginated(BaseModel):
+    data: list
+    limit: int
+    total_items: NonNegativeInt
+    previous: str | None = None
+    next: str | None = None
 
 
 class EncryptedSense(BaseModel):
@@ -12,12 +20,12 @@ class EncryptedSense(BaseModel):
     created_at: datetime
 
 
-class EncryptedSenseList(BaseModel):
-    senses: list[EncryptedSense]
+class EncryptedSenseList(Paginated):
+    data: list[EncryptedSense]
 
 
-class SenseList(BaseModel):
-    senses: list[Sense]
+class SenseList(Paginated):
+    data: list[Sense]
 
 
 class Options(BaseModel):

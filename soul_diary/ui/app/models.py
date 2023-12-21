@@ -1,17 +1,28 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, constr, field_validator
 
 
 class Emotion(str, enum.Enum):
-    JOY = "радость"
-    FORCE = "сила"
-    CALMNESS = "спокойствие"
     SADNESS = "грусть"
-    MADNESS = "бешенство"
+    JOY = "радость"
+    CALMNESS = "спокойствие"
+    IRRITATION = "раздражение"
+    ANGER = "злость"
     FEAR = "страх"
+    SHAME = "стыд"
+    GUILD = "вина"
+    RESENTMENT = "обида"
+    BOREDOM = "скука"
+    ANXIETY = "тревога"
+    COURAGE = "смелость"
+    PRIDE = "гордость"
+    ENERGY = "энергичность"
+    THANKFULNESS = "благодарность"
+    PLEASURE = "удовольствие"
+    DELIGHT = "восхищение"
 
 
 class BackendType(str, enum.Enum):
@@ -26,3 +37,10 @@ class Sense(BaseModel):
     body: constr(min_length=1, strip_whitespace=True)
     desires: constr(min_length=1, strip_whitespace=True)
     created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def created_at_validator(cls, created_at: datetime) -> datetime:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+        local_timezone = datetime.now().astimezone().tzinfo
+        return created_at.astimezone(local_timezone)

@@ -1,7 +1,20 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, NonNegativeInt
+
+
+class Pagination(BaseModel):
+    cursor: str | None = None
+    limit: int = 10
+
+
+class PaginatedResponse(BaseModel):
+    data: list
+    limit: int
+    total_items: NonNegativeInt
+    previous: str | None = None
+    next: str | None = None
 
 
 class CreateSenseRequest(BaseModel):
@@ -20,5 +33,5 @@ class SenseResponse(BaseModel):
     created_at: datetime
 
 
-class SenseListResponse(BaseModel):
+class SenseListResponse(PaginatedResponse):
     data: list[SenseResponse]

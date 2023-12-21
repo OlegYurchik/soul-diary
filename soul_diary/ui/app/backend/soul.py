@@ -127,9 +127,15 @@ class SoulBackend(BaseBackend):
         params = {key: value for key, value in params.items() if value is not None}
 
         response = await self.request(method="GET", path=path, params=params)
-        senses = [EncryptedSense.model_validate(sense) for sense in response["data"]]
+        data = [EncryptedSense.model_validate(sense) for sense in response["data"]]
 
-        return EncryptedSenseList(senses=senses)
+        return EncryptedSenseList(
+            data=data,
+            limit=response["limit"],
+            total_items=response["total_items"],
+            previous=response["previous"],
+            next=response["next"],
+        )
 
     async def fetch_sense(self, sense_id: uuid.UUID) -> EncryptedSense:
         path = f"/senses/{sense_id}"

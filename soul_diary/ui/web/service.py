@@ -1,5 +1,6 @@
 from typing import Any
 
+import flet
 import flet_fastapi
 import uvicorn
 from facet import ServiceMixin
@@ -24,10 +25,13 @@ class WebService(ServiceMixin):
         return self._port
 
     async def start(self):
-        app = flet_fastapi.app(SoulDiaryApp(
-            backend=BackendType.SOUL,
-            backend_data=self._backend_data,
-        ).run)
+        app = flet_fastapi.app(
+            SoulDiaryApp(
+                backend=BackendType.SOUL,
+                backend_data=self._backend_data,
+            ).run,
+            web_renderer=flet.WebRenderer.HTML,
+        )
         config = uvicorn.Config(app=app, host="0.0.0.0", port=self._port)
         server = UvicornServer(config)
 

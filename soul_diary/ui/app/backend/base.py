@@ -112,11 +112,17 @@ class BaseBackend:
 
     async def get_sense_list(self, cursor: str | None = None, limit: int = 10) -> SenseList:
         encrypted_sense_list = await self.fetch_sense_list(cursor=cursor, limit=limit)
-        senses = [
+        data = [
             self.convert_encrypted_sense_to_sense(encrypted_sense)
-            for encrypted_sense in encrypted_sense_list.senses
+            for encrypted_sense in encrypted_sense_list.data
         ]
-        return SenseList(senses=senses)
+        return SenseList(
+            data=data,
+            limit=encrypted_sense_list.limit,
+            total_items=encrypted_sense_list.total_items,
+            previous=encrypted_sense_list.previous,
+            next=encrypted_sense_list.next,
+        )
 
     async def create_sense(
             self,

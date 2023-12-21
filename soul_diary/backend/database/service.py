@@ -1,13 +1,17 @@
+import base64
 import pathlib
+import struct
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Type
 
 import bcrypt
 from alembic import command as alembic_command
 from alembic.config import Config as AlembicConfig
 from facet import ServiceMixin
-from sqlalchemy import select
+from pydantic import BaseModel
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -15,7 +19,14 @@ from .models import Sense, Session, User
 from .settings import DatabaseSettings
 
 
+class CursorData(BaseModel):
+    created_at: datetime
+    sense_id: uuid.UUID
+
+
 class DatabaseService(ServiceMixin):
+    ENCODING = "utf-8"
+
     def __init__(self, dsn: str):
         self._dsn = dsn
         self._engine = create_async_engine(self._dsn, pool_recycle=60)
@@ -99,13 +110,84 @@ class DatabaseService(ServiceMixin):
 
         return user_session
 
-    async def get_senses(self, session: AsyncSession, user: User) -> list[Sense]:
-        query = select(Sense).where(Sense.user == user).order_by(Sense.created_at.desc())
+    def cursor_encode(self, data: CursorData) -> str:
+        datetime_bytes = bytes(struct.pack("d", data.created_at.timestamp()))
+        sense_id_bytes = data.sense_id.bytes
+        cursor_bytes = datetime_bytes + sense_id_bytes
+        return base64.b64encode(cursor_bytes).decode(self.ENCODING)
 
+    def cursor_decode(self, cursor: str) -> CursorData:
+        cursor_bytes = base64.b64decode(cursor.encode(self.ENCODING))
+        created_at = datetime.fromtimestamp(struct.unpack("d", cursor_bytes[:8])[0])
+        sense_id = uuid.UUID(bytes=cursor_bytes[8:])
+        return CursorData(created_at=created_at, sense_id=sense_id)
+
+    def get_senses_filters(self, user: User) -> list:
+        filters = [Sense.user == user]
+
+        return filters
+
+    async def get_senses_count(self, session: AsyncSession, user: User) -> int:
+        filters = self.get_senses_filters(user=user)
+        query = select(func.count(Sense.id)).where(*filters)
+
+        count = await session.scalar(query)
+        return count
+
+    async def get_senses(
+            self,
+            session: AsyncSession,
+            user: User,
+            cursor: str | None = None,
+            limit: int = 10,
+    ) -> tuple[list[Sense], str | None, str | None]:
+        filters = self.get_senses_filters(user=user)
+        cursor_data = None if cursor is None else self.cursor_decode(cursor)
+
+        current_filters = filters.copy()
+        previous_sense = None
+        if cursor_data is not None:
+            current_filters.append(or_(
+                Sense.created_at > cursor_data.created_at,
+                and_(Sense.created_at == cursor_data.created_at, Sense.id > cursor_data.sense_id)
+            ))
+            query = (
+                select(Sense).where(*current_filters)
+                .order_by(Sense.created_at.asc()).offset(limit).limit(1)
+            )
+            result = await session.execute(query)
+            previous_sense = result.scalars().first()
+
+        current_filters = filters.copy()
+        if cursor_data is not None:
+            current_filters.append(or_(
+                Sense.created_at < cursor_data.created_at,
+                and_(Sense.created_at == cursor_data.created_at, Sense.id <= cursor_data.sense_id),
+            ))
+        query = (
+            select(Sense).where(*current_filters)
+            .order_by(Sense.created_at.desc()).limit(limit + 1)
+        )
         result = await session.execute(query)
-        senses = result.scalars().all()
+        senses = list(result.scalars().all())
 
-        return list(senses)
+        previous_cursor = None
+        if previous_sense is not None:
+            previous_cursor_data = CursorData(
+                created_at=previous_sense.created_at,
+                sense_id=previous_sense.id,
+            )
+            previous_cursor = self.cursor_encode(data=previous_cursor_data)
+
+        next_cursor = None
+        if len(senses) == limit + 1:
+            next_cursor_data = CursorData(
+                created_at=senses[-1].created_at,
+                sense_id=senses[-1].id,
+            )
+            next_cursor = self.cursor_encode(data=next_cursor_data)
+
+        return senses[:-1], previous_cursor, next_cursor
 
     async def create_sense(self, session: AsyncSession, user: User, data: str) -> Sense:
         sense = Sense(user=user, data=data)

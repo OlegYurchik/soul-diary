@@ -40,7 +40,7 @@ class Session(Base):
 
     __table_args__ = (
         Index("sessions__token_idx", "token", postgresql_using="hash"),
-        Index("sessions__user_id_idx", "user_id", postgresql_using="btree"),
+        Index("sessions__user_id_idx", "user_id", postgresql_using="hash"),
     )
 
 
@@ -56,6 +56,6 @@ class Sense(Base):
 
     __table_args__ = (
         Index("senses__id_idx", "id", postgresql_using="hash"),
-        Index("senses__user_id_idx", "user_id", postgresql_using="btree"),
-        Index("senses__created_at_idx", "created_at", postgresql_using="btree"),
+        Index("senses__user_id_idx", "user_id", postgresql_using="hash"),
+        Index("senses__created_at__id_idx", "created_at", "id", postgresql_using="btree"),
     )

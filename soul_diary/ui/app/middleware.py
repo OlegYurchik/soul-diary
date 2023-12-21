@@ -9,6 +9,7 @@ from soul_diary.ui.app.routes import AUTH, SENSE_LIST
 async def middleware(page: flet.Page, params: Params, basket: Basket):
     local_storage = LocalStorage(client_storage=page.client_storage)
     auth_data = await local_storage.get_auth_data()
+    # await local_storage._client_storage.clear_async()
     if auth_data is None:
         await page.go_async(AUTH)
         return

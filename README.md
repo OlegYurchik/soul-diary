@@ -1,12 +1,14 @@
 # Soul Diary
 
+Self-hosted service.
+
 ## ToDo
 
-1. Implement cursor pagination on backends and server
-2. Implement infinity scroll 
-3. Add filters: min timestamp, max timestamp, emotions
-4. Implement S3 backend client
-5. Implement FTP backend client
+0. Fill README
+1. Add filters: min timestamp, max timestamp, emotions
+2. Implement S3 backend client
+3. Implement FTP backend client
+4. Add notifications
 
 ## User Flow
 

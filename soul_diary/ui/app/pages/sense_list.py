@@ -1,4 +1,7 @@
+import asyncio
 import uuid
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from functools import partial
 
 import flet
@@ -15,6 +18,8 @@ class SenseListPage(BasePage):
     def __init__(self, view: flet.View, local_storage: LocalStorage, extend: bool = False):
         self.local_storage = local_storage
         self.senses = []
+        self.next_cursor = None
+        self.lock = asyncio.Lock()
         self.senses_cards: flet.Column
         self.extend = extend
 
@@ -23,6 +28,7 @@ class SenseListPage(BasePage):
     def build(self) -> flet.Container:
         self.view.vertical_alignment = flet.MainAxisAlignment.START
         self.view.scroll = flet.ScrollMode.ALWAYS
+        self.view.on_scroll = self.callback_scroll
 
         view_switch = flet.Switch(
             label="Расширенный вид",
@@ -67,7 +73,8 @@ class SenseListPage(BasePage):
     async def did_mount_async(self):
         backend_client = await get_backend_client(self.local_storage)
         sense_list = await backend_client.get_sense_list()
-        self.senses = sense_list.senses
+        self.senses = sense_list.data
+        self.next_cursor = sense_list.next
         await self.render_cards()
 
     async def render_cards(self):
@@ -166,6 +173,21 @@ class SenseListPage(BasePage):
 
         return gesture_detector
 
+    @asynccontextmanager
+    async def in_progress(self):
+        progress_ring = flet.Container(
+            content=flet.ProgressRing(),
+            alignment=flet.alignment.center,
+            height=150,
+        )
+        self.senses_cards.controls.append(progress_ring)
+        await self.update_async()
+
+        yield
+
+        self.senses_cards.controls.pop()
+        await self.update_async()
+
     @callback_error_handle
     async def callback_switch_view(self, event: flet.ControlEvent):
         self.extend = event.control.value
@@ -187,3 +209,20 @@ class SenseListPage(BasePage):
             await backend_client.logout()
         await self.local_storage.clear_shared_data()
         await event.page.go_async(AUTH)
+
+    @callback_error_handle
+    async def callback_scroll(self, event: flet.OnScrollEvent):
+        if (
+                event.pixels < event.max_scroll_extent - 100 or
+                self.next_cursor is None or
+                self.lock.locked()
+        ):
+            return
+
+        async with self.lock:
+            backend_client = await get_backend_client(local_storage=self.local_storage)
+            async with self.in_progress():
+                sense_list = await backend_client.get_sense_list(cursor=self.next_cursor)
+            self.senses.extend(sense_list.data)
+            self.next_cursor = sense_list.next
+            await self.render_cards()
