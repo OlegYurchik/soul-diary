@@ -25,6 +25,11 @@ class Emotion(str, enum.Enum):
     DELIGHT = "восхищение"
 
 
+class EmotionLegacy(str, enum.Enum):
+    MADNESS = "бешенство"
+    FORCE = "сила"
+
+
 class BackendType(str, enum.Enum):
     LOCAL = "local"
     SOUL = "soul"
@@ -32,7 +37,7 @@ class BackendType(str, enum.Enum):
 
 class Sense(BaseModel):
     id: uuid.UUID
-    emotions: list[Emotion] = []
+    emotions: list[Emotion | EmotionLegacy] = []
     feelings: constr(min_length=1, strip_whitespace=True)
     body: constr(min_length=1, strip_whitespace=True)
     desires: constr(min_length=1, strip_whitespace=True)
